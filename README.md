@@ -1,17 +1,30 @@
-# YOLOv5 Segmenation Inference Implementation in C# and OnnxRuntime
+# YOLOv5 Segmenation Implementation in C# and OnnxRuntime
 
-## 주의사항
-### 출처 코드 및 환경설정에서 바뀐점
+## Notice
+This repository is for only yolov5-seg inference using onnx **(NOT FOR TRAIN)**
+
+## How to use
+1. You have to train in python or libtorch
+
+2. Convert pt or pth file to onnx
+
+3. Load onnx file and insert images
+
+4. **YOU CAN USE IT!!**
+
+
+## Changes
 OpenCvSharp3 => OpenCvSharp4 4.2.0.20191223
 
 Microsoft.ML.OnnxRuntime 1.7.0 => Microsoft.ML.OnnxRuntime.GPU 1.11.0
 
-Microsoft.ML.OnnxRuntime.Managed는 자동으로 1.11.0으로 업데이트 됩니다.
+Microsoft.ML.OnnxRuntime.Managed is upgraded to 1.11.0 automatically
 
-OpenCvSharpExtern.dll과 OpenCvSharpExtern.pdb 를 아래 링크에서 다운받아서 추가로 넣어주셔야합니다.
+OpenCvSharpExtern.dll and OpenCvSharpExtern.pdb is necessary for build
 
-* https://github.com/shimat/opencvsharp/releases 에 들어가시면 버전에 맞게 다운로드 가능합니다.
+You can download these files on https://github.com/shimat/opencvsharp/releases with your vesrion
 
-# 출처
+## Original code
 https://github.com/singetta/OnnxSample
-## 원작자에게 공유를 허락 받았습니다.
+
+**Permission to share granted by the original author**
