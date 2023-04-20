@@ -244,14 +244,19 @@ namespace OnnxSample.Yolov5
                             int idx = indices[ids];
                             var cls = detected_mat[idx][detected_mat[idx].Count - 1];
                             var confi = detected_mat[idx][4];
+                            float xmin = detected_mat[idx][0] < 0 ? 0 : detected_mat[idx][0];
+                            float ymin = detected_mat[idx][1] < 0 ? 0 : detected_mat[idx][1];
+                            float xmax = detected_mat[idx][2] > imgSize.Width ? imgSize.Width : detected_mat[idx][2];
+                            float ymax = detected_mat[idx][3] > imgSize.Height ? imgSize.Height : detected_mat[idx][3];
+
                             predictions.Add(new Prediction
                             {
                                 Box = new Box
                                 {
-                                    Xmin = detected_mat[idx][0],
-                                    Ymin = detected_mat[idx][1],
-                                    Xmax = detected_mat[idx][2],
-                                    Ymax = detected_mat[idx][3]
+                                    Xmin = xmin,
+                                    Ymin = ymin,
+                                    Xmax = xmax,
+                                    Ymax = ymax
                                 },
                                 Label = ((int)cls).ToString(),
                                 Id = (int)cls,
