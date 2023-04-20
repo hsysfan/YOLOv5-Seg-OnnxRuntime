@@ -308,9 +308,31 @@ namespace OnnxSample.Yolov5
 
                     Cv2.Resize(save_result, reshape_result, imgSize);
 
-                    reshape_result.ConvertTo(reshape_result, MatType.CV_8UC1, 255);
-                    
-                    return reshape_result;
+                    Mat bg_mat = new Mat(imgSize, MatType.CV_32FC1, Scalar.All(0));
+
+                    for (int i = 0; i < rescale_predictions.Count; i++)
+                    {
+                        for (int j = i + 1; j < rescale_predictions.Count; j++)
+                        {
+                            Rect rect1 = new Rect(new Point((int)rescale_predictions[i].Box.Xmin, (int)rescale_predictions[i].Box.Ymin), new Size(rescale_predictions[i].Box.Xmax - rescale_predictions[i].Box.Xmin, rescale_predictions[i].Box.Ymax - rescale_predictions[i].Box.Ymin));
+                            Rect rect2 = new Rect(new Point((int)rescale_predictions[j].Box.Xmin, (int)rescale_predictions[j].Box.Ymin), new Size(rescale_predictions[j].Box.Xmax - rescale_predictions[j].Box.Xmin, rescale_predictions[j].Box.Ymax - rescale_predictions[j].Box.Ymin));
+                            if (IntersectionOverUnion(rect1, rect2) >= 0.9)
+                            {
+                                rescale_predictions.Remove(rescale_predictions[j]);
+                            }
+                        }
+                    }
+                    foreach (Prediction a in rescale_predictions)
+                    {
+                        Mat seg_mat = new Mat(imgSize, MatType.CV_32FC1, Scalar.All(0));
+                        int width_b = (int)Math.Abs(a.Box.Xmax - a.Box.Xmin);
+                        int height_b = (int)Math.Abs(a.Box.Ymax - a.Box.Ymin);
+                        Rect rect = new Rect(new Point((int)a.Box.Xmin, (int)a.Box.Ymin), new Size(width_b, height_b));
+                        reshape_result[rect].CopyTo(seg_mat[rect]);
+                        masks2segments(seg_mat, ref bg_mat);
+                    }
+
+                    return bg_mat;
                     
                 }
             }
@@ -388,13 +410,15 @@ namespace OnnxSample.Yolov5
             return 1 / (1 + (float)Math.Exp(-x));
         }
 
-        public string[] masks2segments(Mat masks)
+        public void masks2segments(Mat masks, ref Mat bg_mask)
         {
             Mat src = new Mat();
             Mat red = new Mat();
-
+            Mat inner = new Mat();
+            bg_mask.ConvertTo(bg_mask, MatType.CV_8UC1);
+            bg_mask.CopyTo(inner);
             masks.ConvertTo(src, MatType.CV_8UC1);
-
+            bg_mask *= 255;
             src *= 255;
 
             string[] a = new string[1];
@@ -406,29 +430,7 @@ namespace OnnxSample.Yolov5
             Cv2.Threshold(bin, bin, 127, 255, ThresholdTypes.Binary);
             Cv2.FindContours(bin, out contours, out hierarchy, RetrievalModes.External, ContourApproximationModes.ApproxSimple);
 
-            double maxArea = 0;
-            int maxAreaIndex = -1;
-
-            for (int i = 0; i < contours.Length; i++)
-            {
-                double area = Cv2.ContourArea(contours[i]);
-                if (area > maxArea)
-                {
-                    maxArea = area;
-                    maxAreaIndex = i;
-                }
-            }
-
-            for (int j = 0; j < 1; j++)
-            {
-                string b = "";
-                for (int i = 0; i < contours[maxAreaIndex].Length; i++)
-                {
-                    b = b + (contours[maxAreaIndex][i].X).ToString() + " " + (contours[maxAreaIndex][i].Y).ToString() + " ";
-                }
-                a[j] = b;
-            }
-            return a;
+            Cv2.BitwiseOr(inner, bin, bg_mask);
         }
 
         private Mat DataPreprocessing(Mat image)
