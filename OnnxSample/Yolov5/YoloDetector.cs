@@ -153,10 +153,8 @@ namespace OnnxSample.Yolov5
             }
         }
 
-        public Mat objectSegmentation(Mat image, double threshold=0.4)
+        public Mat objectSegmentation(Mat image)
         {
-
-            MinConfidence = (float)threshold;
             float ratio = 0.0f;
             Point diff1 = new Point();
             Point diff2 = new Point();
