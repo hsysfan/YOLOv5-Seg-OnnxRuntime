@@ -10,7 +10,9 @@ This repository is for only yolov5-seg inference using onnx **(NOT FOR TRAIN)**
 
 3. Load onnx file and insert images
 
-4. **YOU CAN USE IT!!**
+4. You have to rewrite Labelmap.cs for your class
+
+5. **YOU CAN USE IT!!**
 
 
 ## Changes
