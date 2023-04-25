@@ -45,9 +45,8 @@ namespace OnnxSample.Yolov5
         }
 
 
-        public List<Prediction> objectDetection(Mat img, double confidence = 0.4)
+        public List<Prediction> objectDetection(Mat img)
         {
-            MinConfidence = (float)confidence;
             float ratio = 0.0f;
             Point diff1 = new Point();
             Point diff2 = new Point();
