@@ -1,4 +1,4 @@
-﻿using Microsoft.ML.OnnxRuntime;
+using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using OpenCvSharp;
 using OpenCvSharp.Dnn;
@@ -173,7 +173,8 @@ namespace OnnxSample.Yolov5
                 // Setup inputs and outputs
                 var inputs = new List<NamedOnnxValue>
                 {
-                    NamedOnnxValue.CreateFromTensor("input", input)
+                    //NamedOnnxValue.CreateFromTensor("input", input)
+                    NamedOnnxValue.CreateFromTensor("images", input)
                 };
                 using (var results = sess.Run(inputs))
                 {
@@ -192,7 +193,7 @@ namespace OnnxSample.Yolov5
                     int w_ratio = (int)((float)pred_dim_m[3] / (float)imgSize.Width);
                     int h_ratio = (int)((float)pred_dim_m[2] / (float)imgSize.Height);
 
-                    var nc = pred_dim[pred_dim.Length - 1] - 5 - 32; //all -number of mask = nc
+                    var nc = pred_dim[pred_dim.Length - 1] - 5 - 32; //all - number of mask = nc
                     var candidate = GetCandidate(pred_value, pred_dim, MinConfidence); //xc
 
                     for (int i = 0; i < candidate.Count; i++)
@@ -217,7 +218,7 @@ namespace OnnxSample.Yolov5
                         candidate[i][3] = ymax;
                     }
 
-                    var detected_mat = GetDetectionMatrix(candidate, MinConfidence);
+                    var detected_mat = GetSegmentationMatrix(candidate, nc, MinConfidence);
 
                     List<Rect> bboxes = new List<Rect>();
                     List<float> confidences = new List<float>();
@@ -256,7 +257,8 @@ namespace OnnxSample.Yolov5
                                     Xmax = xmax,
                                     Ymax = ymax
                                 },
-                                Label = ((int)cls).ToString(),
+                                //Label = ((int)cls).ToString(),
+                                Label = LabelMap.Labels[(int)cls],
                                 Id = (int)cls,
                                 Confidence = confi
                             });
@@ -612,6 +614,51 @@ namespace OnnxSample.Yolov5
                 dataList.Add(masks);
             }
             return dataList;
+        }
+
+        public static List<List<float>> GetSegmentationMatrix(List<List<float>> candidate, int nc,
+        float pred_thresh = 0.25f, int max_nms = 30000)
+        {
+            var mat = new List<List<float>>();
+            for (int i = 0; i < candidate.Count; i++)
+            {
+                if (candidate[i][4] < pred_thresh)
+                {
+                    // confidence less than threshold
+                    continue;
+                }
+
+                int cls = -1;
+                float max_score = float.MinValue;
+
+                int nc_index_max = 5 + nc;
+                for (int j = 5; j < nc_index_max; j++)
+                {
+                    // find the max score
+                    if (candidate[i][j] > max_score)
+                    {
+                        cls = j;
+                        max_score = candidate[i][j];
+                    }
+                }
+
+                if (cls < 0) continue;
+
+                List<float> tmpDetect = new List<float>();
+                for (int j = 0; j < 4; j++) tmpDetect.Add(candidate[i][j]); //box
+                tmpDetect.Add(candidate[i][cls]);   //class prob
+                tmpDetect.Add(cls - 5);             //class
+                mat.Add(tmpDetect);
+            }
+
+            //max_nms sort
+            mat.Sort((a, b) => (a[4] > b[4]) ? -1 : 1);
+
+            if (mat.Count > max_nms)
+            {
+                mat.RemoveRange(max_nms, mat.Count - max_nms);
+            }
+            return mat;
         }
 
         public static List<List<float>> GetDetectionMatrix(List<List<float>> candidate,
